@@ -1,5 +1,6 @@
 #   importing pakages
 from os import path
+from turtledemo import clock
 
 import pygame
 import random
@@ -40,6 +41,7 @@ for i in range(numberOfStars):
 
 widthOfPlayer, heightOfPlayer = playerSurface.get_size()
 
+playerPosition = pygame.Vector2(windowWidth / 2, windowHeight / 2)
 while running:
 
     for event in pygame.event.get():
@@ -55,10 +57,40 @@ while running:
 
 
 
-    playerPosition = pygame.mouse.get_pos()
-    offsetPosition = (playerPosition[0] + widthOfPlayer / -2, playerPosition[1] + heightOfPlayer / -2)
 
+
+
+
+
+    offsetPosition = (playerPosition[0] + widthOfPlayer / -2, playerPosition[1] + heightOfPlayer / -2)
     displaySurface.blit(playerSurface, offsetPosition)
+
+    keys = pygame.key.get_pressed()
+
+    # playerPosition = pygame.mouse.get_pos()
+
+
+
+
+    if keys[pygame.K_w]:
+        playerPosition.y -= 1
+    if keys[pygame.K_s]:
+        playerPosition.y += 1
+    if keys[pygame.K_a]:
+        playerPosition.x -= 1
+    if keys[pygame.K_d]:
+        playerPosition.x += 1
+
+
+
+    #
+
+
+
+
+
+
+
 
     pygame.display.flip()
 
