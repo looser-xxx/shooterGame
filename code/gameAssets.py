@@ -14,6 +14,21 @@ pygame.init()
 
 screen = pygame.display.set_mode(enV.screenSize)
 
+
+
+
+
+
+
+class Player(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = pygame.image.load("assets/player/player.png").convert_alpha()
+        self.rect = self.image.get_frect(center=enV.windowCenter)
+
+
+
+
 current_dir = path.dirname('main.py')
 imagePath = path.join(current_dir, '..', 'images', 'player.png')
 playerSurface = pygame.image.load(imagePath).convert_alpha()

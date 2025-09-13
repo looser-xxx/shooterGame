@@ -1,113 +1,159 @@
-#   importing pakages
-import random
 from os import path
 
 import pygame
-
-import environmentInfo as enV
-import gameAssets as gA
-import keyboardMovements
-
-#   pygame initialization
-pygame.init()
+import gameSettings as gS
+import random
 
 
-
-displaySurface = pygame.display.set_mode((enV.windowWidth, enV.windowHeight))
-
-
-#   initializing variable to be used
-running = True
-surf = pygame.Surface((0, 0))
-toFireShot = False
-destroyMeteor = False
-
-#   importing an image
+def loadingAssets(fileName):
+    return pygame.image.load(path.join(path.dirname('main.py'), '..', 'images', fileName)).convert_alpha()
 
 
-
-randomPositionForStars = []
-numberOfStars = 20
-
-random.seed(5034345)
-for i in range(numberOfStars):
-    x = random.randint(0, enV.windowWidth)
-    y = random.randint(0, enV.windowHeight)
-    randomPositionForStars.append((x, y))
-
-
-
-meteorExplode=False
-
-gA.meteorRect.top-=200
-loopTime = 0
-initialLoopTime = 0
-while running:
-
-    loopTime+=1
-
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-
-
-
-    displaySurface.fill('darkslategray')
-
-    for x in range(numberOfStars):
-        displaySurface.blit(gA.starSurface, randomPositionForStars[x])
+class Shooter:
+    def __init__(self):
+        pygame.init()
+        self.running = True
+        self.clock = pygame.time.Clock()
+        self.screenColor=gS.screenColor
+        self.displaySurface=pygame.display.set_mode(gS.screenSize)
+        self.stars=Stars(loadingAssets('star.png'))
+        self.player=Player(loadingAssets('player.png'))
+        self.lasers=pygame.sprite.Group()
+        self.allSprites=pygame.sprite.Group()
+        self.allSprites.add(self.stars)
+        self.allSprites.add(self.player)
 
 
 
 
-    if pygame.mouse.get_just_pressed()[0]:
-        toFireShot = True
-        destroyMeteor = True
-        initialLoopTime = loopTime
-        gA.laserRect.bottom = gA.playerRect.top
-        gA.laserRect.left = gA.playerRect.centerx-5
+    def draw(self):
+        self.displaySurface.fill(self.screenColor)
+        self.stars.draw(self.displaySurface)
+        self.allSprites.draw(self.displaySurface)
+
+
+    def handleEvents(self,dt):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    print("button pressed")
+                    laser = Laser(loadingAssets('laser.png'), self.player.rect.centerx, self.player.rect.top)
+                    self.lasers.add(laser)
+                    self.allSprites.add(laser)
+
+
+
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_w]:
+            self.player.move('w',dt)
+        if keys[pygame.K_s]:
+            self.player.move('s',dt)
+        if keys[pygame.K_a]:
+            self.player.move('a',dt)
+        if keys[pygame.K_d]:
+            self.player.move('d',dt)
 
 
 
 
 
-    if gA.laserRect.bottom < 0:
-        gA.laserRect.bottom = 0
-    else:
-        gA.laserRect.top-=5
-
-
-    if toFireShot :
-        displaySurface.blit(gA.laserSurface, gA.laserRect)
-
-
-    displaySurface.blit(gA.meteorSurface, gA.meteorRect)
-
-    if gA.meteorRect.bottom > gA.laserRect.bottom > gA.meteorRect.top and gA.meteorRect.right > gA.laserRect.left > gA.meteorRect.left and toFireShot:
-        gA.laserRect.bottom = 0
-        meteorExplode = True
-        print('true')
-        explodeSizeX, explodeSizeY = gA.explodeSurface.get_size()
-        displaySurface.blit(gA.explodeSurface,(gA.meteorRect.left + explodeSizeX / 2, gA.meteorRect.top + explodeSizeY / 2 - 7))
-
-
-    if meteorExplode:
-        meteorExplode = False
 
 
 
+    def boundary(self):
+        if self.player.rect.top<0:
+            self.player.rect.top=0
+        if self.player.rect.bottom>gS.screenHeight:
+            self.player.rect.bottom=gS.screenHeight
+        if self.player.rect.left<0:
+            self.player.rect.left=0
+        if self.player.rect.right>gS.screenWidth:
+            self.player.rect.right=gS.screenWidth
 
-    displaySurface.blit(gA.playerSurface, gA.playerRect)
+    def run(self):
+        while self.running:
+            dt = self.clock.tick(gS.fps) / 1000
+            self.handleEvents(dt)
+            self.allSprites.update(dt)
+
+            self.draw()
+            self.boundary()
 
 
 
+            pygame.display.flip()
 
 
-    keys = pygame.key.get_pressed()
-    playerRect = keyboardMovements.keyPresses(gA.playerRect,keys)
-    playerRect =keyboardMovements.boundingRect(playerRect)
+
+class Stars(pygame.sprite.Sprite):
+    def __init__(self,image):
+        super().__init__()
+        self.image=image
+        self.rect=self.image.get_rect()
+        self.randStarPose=[]
+
+    def starPose(self):
+        random.seed(gS.randomSeed)
+        for i in range(gS.numberOfStars):
+            x = random.randint(0, gS.screenWidth)
+            y = random.randint(0, gS.screenHeight)
+            self.randStarPose.append((x, y))
+
+    def draw(self,displaySurface):
+        if not self.randStarPose:
+            self.starPose()
+        else:
+            for pos in self.randStarPose:
+                displaySurface.blit(self.image, pos)
 
 
-    pygame.display.flip()
+class Player(pygame.sprite.Sprite):
+    def __init__(self,image):
+        super().__init__()
+        self.image=image
+        self.rect=self.image.get_frect(center=gS.screenCenter)
+        self.speed=gS.playerSpeed
 
-pygame.quit()
+
+
+    def move(self,keyPressed,dt):
+        if keyPressed=='w':
+            self.rect.top-=self.speed * dt
+        elif keyPressed=='a':
+            self.rect.left-=self.speed * dt
+        elif keyPressed=='s':
+            self.rect.bottom+=self.speed * dt
+        elif keyPressed=='d':
+            self.rect.right+=self.speed * dt
+
+    def draw(self,displaySurface):
+        displaySurface.blit(self.image,self.rect)
+
+
+class Laser(pygame.sprite.Sprite):
+    def __init__(self,image,x,y):
+        super().__init__()
+        self.image=image
+        self.rect=self.image.get_frect()
+        self.rect.centerx=x
+        self.rect.bottom=y
+
+    def draw(self,displaySurface):
+        print("draw call")
+        displaySurface.blit(self.image,self.rect)
+
+    def update(self,dt):
+        self.rect.bottom -= gS.laserSpeed * dt
+
+        if self.rect.bottom < 0:
+            self.kill()
+
+
+if __name__ == "__main__":
+    screen = pygame.display.set_mode(gS.screenSize)
+    game = Shooter()
+    game.run()
