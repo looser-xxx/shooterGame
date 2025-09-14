@@ -44,7 +44,7 @@ ammoIncrement=2
 
 #meteor
 meteorSpeed=500
-meteorSpawnRate=0.25
+meteorSpawnRate=0.1
 
 
 
