@@ -44,7 +44,8 @@ ammoIncrement=2
 
 #meteor
 meteorSpeed=500
-meteorSpawnRate=0.1
+meteorSpawnRate=0.5
+
 
 
 
@@ -57,7 +58,11 @@ healthIncrement=10
 lifeSpawnRate=20
 lifeSpeed=300
 
-randomProbability=80
+randomProbability=20
 
 #control type
 mouse=False
+
+
+difficultyIncrement=10
+difficultyTime=10

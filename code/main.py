@@ -1,4 +1,5 @@
 # Import the necessary modules from the Python Standard Library
+import math
 from os import path
 import pygame
 import random
@@ -19,17 +20,18 @@ def loadingAssets(fileName):
 
 
 def randGenForProb(n):
-    return n
-    # n*=1000
-    # randSmall=n-gS.randomProbability/100*n
-    # randLarge=n+gS.randomProbability/100*n
-    # randomValue=random.randint(int(randSmall), int(randLarge))
-    # return randomValue/1000
+
+    n*=1000
+    randSmall=n-gS.randomProbability/100*n
+    randLarge=n+gS.randomProbability/100*n
+    randomValue=random.randint(int(randSmall), int(randLarge))
+    return randomValue/1000
 
 class Shooter:
     def __init__(self):
+        print('const')
         # Initialize Pygame and set up the main game window
-        self.gameScore = 0
+        self.gameTime = 0
         pygame.init()
         self.running = True  # Controls the main game loop
         self.clock = pygame.time.Clock()  # Manages game speed (FPS)
@@ -67,162 +69,32 @@ class Shooter:
         self.ammoTimer = 0
         self.healthTimer = 0
         self.lifeTimer=0
+        self.difficultyTime=gS.difficultyTime
+        print(self.difficultyTime)
 
-    def spawnMeteor(self):
-        # Randomize the starting x-position
-        x = random.randint(gS.playSpace[0], gS.playSpace[1])
-        # The meteor starts just above the screen
-        y = gS.droppingSpawnPosition
-        # Create a new meteor instance
-        newMeteor = Meteor(loadingAssets('meteor.png'), x, y)
-        # Add the meteor to both the meteors group and the main group
-        self.meteors.add(newMeteor)
-        self.allSprites.add(newMeteor)
 
-    def spawnAmmo(self):
-        # Randomize the starting x-position
-        x = random.randint(gS.playSpace[0], gS.playSpace[1])
-        # The meteor starts just above the screen
-        y = gS.droppingSpawnPosition
-        # Create a new meteor instance
-        newAmmo = Ammo(loadingAssets('ammo.png'), x, y)
-        # Add the meteor to both the meteors group and the main group
-        self.ammoG.add(newAmmo)
-        self.allSprites.add(newAmmo)
+        # Spawn rates
+        self.meteorSpawnRate=gS.meteorSpawnRate
+        self.ammoSpawnRate=gS.ammoSpawnRate
+        self.ammoIncrement=gS.ammoIncrement
+        self.healthSpawnRate=gS.healthSpawnRate
+        self.lifeSpawnRate=gS.lifeSpawnRate
 
-    def spawnHealth(self):
-        # Randomize the starting x-position
-        x = random.randint(gS.playSpace[0], gS.playSpace[1])
-        # The meteor starts just above the screen
-        y = gS.droppingSpawnPosition
-        # Create a new meteor instance
-        newHealth = Health(loadingAssets('health.png'), x, y)
-        # Add the meteor to both the meteors group and the main group
-        self.healthG.add(newHealth)
-        self.allSprites.add(newHealth)
 
-    def spawnLife(self):
-        # Randomize the starting x-position
-        x = random.randint(gS.playSpace[0], gS.playSpace[1])
-        y = gS.droppingSpawnPosition
-        # Create a new meteor instance
-        newLife = Health(loadingAssets('life.png'), x, y)
-        # Add the meteor to both the meteors group and the main group
-        self.lifeG.add(newLife)
-        self.allSprites.add(newLife)
+    def difficulty(self):
+        print("difficulty")
+        self.difficultyTime+=5
+        difficulty = 100-gS.difficultyIncrement
+
+
+        self.meteorSpawnRate *= difficulty / 100
+        self.ammoSpawnRate *= difficulty / 100
+        self.ammoIncrement += self.ammoIncrement*gS.difficultyIncrement/100
+        self.healthSpawnRate *= (difficulty / 100)*2
+        self.lifeSpawnRate *= (difficulty / 100*4)
 
 
 
-    def draw(self):
-        # Fills the entire screen with a solid color to erase the previous frame.
-        self.displaySurface.fill(self.screenColor)
-        # self.displaySurface.blit(loadingAssets('background.png'), self.displaySurface.get_rect())
-
-        # Draws the star background. We draw this first so other objects appear on top.
-        self.stars.draw(self.displaySurface)
-
-        # Manually iterate through all sprites to handle custom drawing logic.
-        for sprite in self.allSprites:
-            # Check if the sprite has a custom 'draw' method.
-            if hasattr(sprite, 'draw'):
-                # If it does, call that custom method (e.g., for the Player's health bar).
-                sprite.draw(self.displaySurface)
-            else:
-                # If it does not, just use the standard blit to draw the sprite's image.
-                self.displaySurface.blit(sprite.image, sprite.rect)
-
-        self.displaySurface.blit(self.ui.image, (0, 0))
-        self.ui.draw(
-                    self.displaySurface,
-                    self.gameScore,
-                    self.player.health,
-                    self.ammo
-                    )
-
-
-
-    def handleEvents(self, dt):
-        # Process all events in the Pygame event queue.
-        for event in pygame.event.get():
-            # Check if the user clicked the 'X' to close the window.
-            if event.type == pygame.QUIT:
-                self.running = False
-
-            # Check for a mouse button press
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                # If the left mouse button (button 1) is pressed.
-                if event.button == 1 and self.ammo > 0:
-                    self.sfx.play('laser')
-                    self.ammo -= 1
-                    # Create a new laser instance at the player's position.a
-                    laser = Laser(
-                        loadingAssets('laser.png'),
-                        self.player.rect.centerx,
-                        self.player.rect.top
-                    )
-                    # Add the new laser to both the lasers group and the main sprite group.
-                    self.lasers.add(laser)
-                    self.allSprites.add(laser)
-
-        # Check for pressed keyboard keys to handle continuous player movement.
-        if gS.mouse:
-            self.player.rect.center=pygame.mouse.get_pos()
-        else:
-
-            keys = pygame.key.get_pressed()
-            if keys[pygame.K_w]:
-                self.player.move('w', dt)
-            if keys[pygame.K_s]:
-                self.player.move('s', dt)
-            if keys[pygame.K_a]:
-                self.player.move('a', dt)
-            if keys[pygame.K_d]:
-                self.player.move('d', dt)
-
-    def collision(self, collisionType):
-        match collisionType:
-            case 'ammo':
-                self.sfx.play('ammo')
-                self.ammo += gS.ammoIncrement
-
-            case 'laser':
-                self.sfx.play('explosion')
-
-            case 'player':
-                self.sfx.play('damage')
-                self.player.health -= gS.healthLossByCollision
-                if self.player.health <= 0:
-                    self.running = False
-
-            case 'health':
-                if self.player.health <= 0:
-                    self.running = False
-                self.sfx.play('health')
-                self.player.health += gS.healthIncrement
-                if self.player.health > 100:
-                    self.player.health =100
-
-            case 'life':
-                self.sfx.play('life')
-                self.player.health = 100
-
-            case _:  # This is the default case, like in a switch
-                print(f"Warning: Unknown collision type '{collisionType}'")
-
-    def boundary(self):
-        # This function prevents the player from moving off-screen.
-
-        # Restrict the player's vertical movement to stay within the screen bounds.
-        if self.player.rect.top < 0:
-            self.player.rect.top = 0
-        if self.player.rect.bottom > gS.screenHeight:
-            self.player.rect.bottom = gS.screenHeight
-
-        # Restrict the player's horizontal movement to stay within the screen bounds.
-        if self.player.rect.left < gS.playSpace[0]:
-            self.player.rect.left = gS.playSpace[0]
-        if self.player.rect.right > gS.playSpace[1]:
-            self.player.rect.right = gS.playSpace[1]
 
     def run(self):
         # This is the main game loop that keeps the game running.
@@ -231,29 +103,31 @@ class Shooter:
             # Calculate the time elapsed since the last frame.
             # This is essential for frame-rate independent movement.
             dt = self.clock.tick(gS.fps) / 1000
-            self.gameScore += dt
+            self.gameTime += dt
             # Update the meteor timer
-
+            self.screenColor = gS.screenColor
+            if self.gameTime  >= self.difficultyTime:
+                self.difficulty()
 
 
             self.meteorTimer += dt
-            if self.meteorTimer >= randGenForProb(gS.meteorSpawnRate):
-                self.spawnMeteor()  # Call the spawn method when the timer runs out.
+            if self.meteorTimer >= randGenForProb(self.meteorSpawnRate):
+                self.spawnObjects('meteor')  # Call the spawn method when the timer runs out.
                 self.meteorTimer = 0  # Reset the timer.
 
             self.ammoTimer += dt
-            if self.ammoTimer >= randGenForProb(gS.ammoSpawnRate):
-                self.spawnAmmo()
+            if self.ammoTimer >= randGenForProb(self.ammoSpawnRate):
+                self.spawnObjects('ammo')
                 self.ammoTimer = 0
 
             self.healthTimer += dt
-            if self.healthTimer >= randGenForProb(gS.healthSpawnRate):
-                self.spawnHealth()
+            if self.healthTimer >= randGenForProb(self.healthSpawnRate):
+                self.spawnObjects('health')
                 self.healthTimer = 0
 
             self .lifeTimer += dt
-            if self.lifeTimer >= randGenForProb(gS.lifeSpawnRate):
-                self.spawnLife()
+            if self.lifeTimer >= randGenForProb(self.lifeSpawnRate):
+                self.spawnObjects('life')
                 self.lifeTimer = 0
 
 
@@ -313,6 +187,154 @@ class Shooter:
 
             # Update the full display Surface to the screen.
             pygame.display.flip()
+
+
+
+    def spawnObjects(self, spawn):
+        x = random.randint(gS.playSpace[0], gS.playSpace[1])
+        y = gS.droppingSpawnPosition
+
+
+        if spawn == 'ammo':
+            self.spawnAmmo(x,y)
+        if spawn == 'meteor':
+            self.spawnMeteor(x,y)
+        if spawn == 'health':
+            self.spawnHealth(x,y)
+        if spawn == 'life':
+            self.spawnLife(x,y)
+
+
+    def spawnMeteor(self,x,y):
+        newMeteor = Meteor(loadingAssets('meteor.png'), x, y)
+        self.meteors.add(newMeteor)
+        self.allSprites.add(newMeteor)
+
+    def spawnAmmo(self,x,y):
+        newAmmo = Ammo(loadingAssets('ammo.png'), x, y)
+        self.ammoG.add(newAmmo)
+        self.allSprites.add(newAmmo)
+
+    def spawnHealth(self,x,y):
+        newHealth = Health(loadingAssets('health.png'), x, y)
+        self.healthG.add(newHealth)
+        self.allSprites.add(newHealth)
+
+    def spawnLife(self,x,y):
+        newLife = Health(loadingAssets('life.png'), x, y)
+        self.lifeG.add(newLife)
+        self.allSprites.add(newLife)
+
+
+
+    def draw(self):
+        # Fills the entire screen with a solid color to erase the previous frame.
+        self.displaySurface.fill(self.screenColor)
+        # self.displaySurface.blit(loadingAssets('background.png'), self.displaySurface.get_rect())
+
+        # Draws the star background. We draw this first so other objects appear on top.
+        self.stars.draw(self.displaySurface)
+
+        # Manually iterate through all sprites to handle custom drawing logic.
+        for sprite in self.allSprites:
+            # Check if the sprite has a custom 'draw' method.
+            if hasattr(sprite, 'draw'):
+                # If it does, call that custom method (e.g., for the Player's health bar).
+                sprite.draw(self.displaySurface)
+            else:
+                # If it does not, just use the standard blit to draw the sprite's image.
+                self.displaySurface.blit(sprite.image, sprite.rect)
+
+        self.displaySurface.blit(self.ui.image, (0, 0))
+        self.ui.draw(
+                    self.displaySurface,
+                    self.gameTime,
+                    self.player.health,
+                    self.ammo
+                    )
+
+    def handleEvents(self, dt):
+        # Process all events in the Pygame event queue.
+        for event in pygame.event.get():
+            # Check if the user clicked the 'X' to close the window.
+            if event.type == pygame.QUIT:
+                self.running = False
+
+            # Check for a mouse button press
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                # If the left mouse button (button 1) is pressed.
+                if event.button == 1 and self.ammo > 0:
+                    self.sfx.play('laser')
+                    self.ammo -= 1
+                    # Create a new laser instance at the player's position.a
+                    laser = Laser(
+                        loadingAssets('laser.png'),
+                        self.player.rect.centerx,
+                        self.player.rect.top
+                    )
+                    # Add the new laser to both the lasers group and the main sprite group.
+                    self.lasers.add(laser)
+                    self.allSprites.add(laser)
+
+        # Check for pressed keyboard keys to handle continuous player movement.
+        if gS.mouse:
+            self.player.rect.center=pygame.mouse.get_pos()
+        else:
+
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_w]:
+                self.player.move('w', dt)
+            if keys[pygame.K_s]:
+                self.player.move('s', dt)
+            if keys[pygame.K_a]:
+                self.player.move('a', dt)
+            if keys[pygame.K_d]:
+                self.player.move('d', dt)
+
+    def collision(self, collisionType):
+        match collisionType:
+            case 'ammo':
+                self.sfx.play('ammo')
+                self.ammo += self.ammoIncrement
+
+            case 'laser':
+                self.sfx.play('explosion')
+
+            case 'player':
+                self.sfx.play('damage')
+                self.player.health -= gS.healthLossByCollision
+                if self.player.health <= 0:
+                    self.running = False
+
+            case 'health':
+                if self.player.health <= 0:
+                    self.running = False
+                self.sfx.play('health')
+                self.player.health += gS.healthIncrement
+                if self.player.health > 100:
+                    self.player.health =100
+
+            case 'life':
+                self.sfx.play('life')
+                self.player.health = 100
+
+            case _:  # This is the default case, like in a switch
+                print(f"Warning: Unknown collision type '{collisionType}'")
+
+    def boundary(self):
+        # This function prevents the player from moving off-screen.
+
+        # Restrict the player's vertical movement to stay within the screen bounds.
+        if self.player.rect.top < 0:
+            self.player.rect.top = 0
+        if self.player.rect.bottom > gS.screenHeight:
+            self.player.rect.bottom = gS.screenHeight
+
+        # Restrict the player's horizontal movement to stay within the screen bounds.
+        if self.player.rect.left < gS.playSpace[0]:
+            self.player.rect.left = gS.playSpace[0]
+        if self.player.rect.right > gS.playSpace[1]:
+            self.player.rect.right = gS.playSpace[1]
 
 
 class Stars(pygame.sprite.Sprite):
@@ -514,7 +536,6 @@ if __name__ == "__main__":
 
     # Start the game loop.
     game.run()
-
 
 
 
